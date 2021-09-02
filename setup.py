@@ -5,5 +5,5 @@ setup(name='Transit',
       description='HTTP Request metrics',
       author='Haleem Assal',
       packages=['transit'],
-      tests_require = ['pytest']
+      install_requires = ['pytest']
      )
