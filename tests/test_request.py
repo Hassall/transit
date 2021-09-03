@@ -1,6 +1,7 @@
 from transit.request import TimedHttpRequest
 from transit.request import HttpRequestStatistics
 
+
 def test_request_string_contents():
     assert 'time_namelookup' in TimedHttpRequest.requestString
     assert 'time_connect' in TimedHttpRequest.requestString
@@ -8,6 +9,7 @@ def test_request_string_contents():
     assert 'time_pretransfer' in TimedHttpRequest.requestString
     assert 'time_starttransfer' in TimedHttpRequest.requestString
     assert 'time_total' in TimedHttpRequest.requestString
+
 
 def test_http_request_stats():
     response = TimedHttpRequest.make("google.com")
