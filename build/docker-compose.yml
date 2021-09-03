@@ -1,0 +1,20 @@
+version: "3.9"
+
+volumes:
+  psql-data:
+
+services:
+  db:
+    build: db
+    environment:
+      POSTGRES_PASSWORD: root
+    volumes:
+      - psql-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+  web:
+    build: web
+    ports:
+      - 8080:80
+    volumes:
+      - .:/app/
