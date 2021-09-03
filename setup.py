@@ -5,5 +5,8 @@ setup(name='Transit',
       description='HTTP Request metrics',
       author='Haleem Assal',
       packages=['transit'],
-      install_requires = ['pytest']
+      install_requires = [
+            'psycopg2',
+            'pytest'
+      ]
      )
