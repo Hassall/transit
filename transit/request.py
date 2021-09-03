@@ -1,5 +1,6 @@
 import subprocess
 
+
 class TimedHttpRequest:
     requestString = (
         "time_namelookup=%{time_namelookup},"
@@ -34,3 +35,18 @@ class HttpRequestStatistics:
     # assumes format is "key=value,..."
     def extractStatistics(statistics):
         return [[pair[0], float(pair[1])] for pair in (stat.split("=") for stat in statistics.split(","))]
+
+    def __str__(self):
+        request = ("DNS = {}"
+                   " TCP Handshake = {}"
+                   " TLS Handshake = {}"
+                   " HTTP Start = {}"
+                   " HTTP End = {}"
+                   " Total = {}")
+
+        return request.format(self.time_namelookup,
+                              self.time_connect,
+                              self.time_appconnect,
+                              self.time_pretransfer,
+                              self.time_starttransfer,
+                              self.time_total)

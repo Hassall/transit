@@ -17,4 +17,8 @@ services:
     ports:
       - 8080:80
     volumes:
-      - .:/app/
+      - ./web:/app/
+  worker:
+    build: worker
+    volumes:
+      - ../transit:/usr/src/app/transit
