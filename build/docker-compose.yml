@@ -12,13 +12,3 @@ services:
       - psql-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
-  web:
-    build: web
-    ports:
-      - 8080:80
-    volumes:
-      - ./web:/app/
-  worker:
-    build: worker
-    volumes:
-      - ../transit:/usr/src/app/transit
