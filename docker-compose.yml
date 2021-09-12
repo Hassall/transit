@@ -12,3 +12,7 @@ services:
       - psql-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+  worker:
+    build: 
+      context: .
+      dockerfile: cmd/worker/Dockerfile

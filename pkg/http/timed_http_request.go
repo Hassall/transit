@@ -1,4 +1,4 @@
-package transit
+package http
 
 import (
 	"fmt"
@@ -24,6 +24,21 @@ type RequestStatistic struct {
 	pretransfer   float64
 	starttransfer float64
 	total         float64
+}
+
+func (requestStatistic RequestStatistic) String() string {
+	return fmt.Sprintf(`Namelookup=%f
+connect=%f
+appconnect=%f
+pretransfer=%f
+starttransfer=%f
+total=%f`,
+		requestStatistic.namelookup,
+		requestStatistic.connect,
+		requestStatistic.appconnect,
+		requestStatistic.pretransfer,
+		requestStatistic.starttransfer,
+		requestStatistic.total)
 }
 
 // TimedHTTPRequest executes http request via curl and returns breakdown of
