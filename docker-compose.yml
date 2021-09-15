@@ -16,9 +16,17 @@ services:
     build: 
       context: .
       dockerfile: cmd/worker/Dockerfile
+    networks:
+      - internal
   server:
     build:
       context: .
       dockerfile: cmd/server/Dockerfile
     ports:
       - 8080:8080
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
