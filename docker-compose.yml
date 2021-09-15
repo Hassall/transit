@@ -16,3 +16,9 @@ services:
     build: 
       context: .
       dockerfile: cmd/worker/Dockerfile
+  server:
+    build:
+      context: .
+      dockerfile: cmd/server/Dockerfile
+    ports:
+      - 8080:8080
