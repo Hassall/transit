@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Hassall/transit/pkg/request"
 	"github.com/gorilla/websocket"
 )
 
@@ -23,13 +24,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
-		mt, message, err := c.ReadMessage()
+		_, message, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			break
 		}
+		msg := request.URLRequest{URL: "google.com"}
+
 		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
+		err = c.WriteJSON(&msg)
 		if err != nil {
 			log.Println("write:", err)
 			break

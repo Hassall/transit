@@ -1,4 +1,4 @@
-package http
+package request
 
 import (
 	"fmt"
@@ -6,6 +6,11 @@ import (
 	"strconv"
 	"strings"
 )
+
+// URLRequest contains url to request statistics on
+type URLRequest struct {
+	URL string
+}
 
 var requestProperties string = `%{time_namelookup}
 %{time_connect}

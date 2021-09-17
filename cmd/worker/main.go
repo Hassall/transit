@@ -4,13 +4,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/Hassall/transit/pkg/request"
 	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{}
 
 func main() {
-	// fmt.Println(http.TimedHTTPRequest("google.com"))
 	c, _, err := websocket.DefaultDialer.Dial("ws://server:8080", nil)
 
 	if err != nil {
@@ -21,7 +21,9 @@ func main() {
 
 	go func() {
 		for {
-			_, msg, err := c.ReadMessage()
+			msg := request.URLRequest{}
+
+			err := c.ReadJSON(&msg)
 			if err != nil {
 				log.Println("read: ", err)
 			}
