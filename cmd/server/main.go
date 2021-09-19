@@ -1,22 +1,47 @@
 package main
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 
 	"github.com/Hassall/transit/pkg/request"
+	"github.com/Hassall/transit/pkg/store"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
 var upgrader = websocket.Upgrader{}
+var urlStore store.URLStore = &store.DB{}
 
 func main() {
-	http.HandleFunc("/", handler)
+	// connect to url store
+	if err := urlStore.Connect(); err != nil {
+		log.Fatal("Failed to connect to database", err)
+	}
+	defer urlStore.Close()
+
+	http.HandleFunc("/api/url", urlHandler)
 	http.ListenAndServe(":8080", nil)
 }
 
+func urlHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "POST":
+		decoder := json.NewDecoder(r.Body)
+		var url request.URLRequest
+		// TODO handle malformed requests
+		if err := decoder.Decode(&url); err != nil {
+			log.Error("Failed to decode JSON", err)
+		}
+		urls := []request.URLRequest{url}
+		// TODO perform batch updates via goroutine
+		urlStore.StoreUrls(urls)
+	default:
+		http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
+	}
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
-	// w.Write([]byte("Hello world"))
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
