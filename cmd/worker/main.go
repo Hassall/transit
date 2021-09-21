@@ -11,10 +11,10 @@ import (
 var upgrader = websocket.Upgrader{}
 
 func main() {
-	c, _, err := websocket.DefaultDialer.Dial("ws://server:8080", nil)
+	c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/internal/worker", nil)
 
 	if err != nil {
-		log.Fatal("dial:", err)
+		log.Fatal(err)
 	}
 
 	defer c.Close()
