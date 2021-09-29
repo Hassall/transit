@@ -1,5 +1,10 @@
 package hub
 
+import (
+	"github.com/Hassall/transit/pkg/request"
+	log "github.com/sirupsen/logrus"
+)
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -7,7 +12,7 @@ type Hub struct {
 	Clients map[*Client]bool
 
 	// Broadcast message to workers.
-	Broadcast chan []byte
+	Broadcast chan request.URLRequest
 
 	// Receive message from workers.
 	Receive chan []byte
@@ -19,32 +24,37 @@ type Hub struct {
 	Unregister chan *Client
 }
 
-func newHub() *Hub {
+// NewHub returns a new hub
+func NewHub() *Hub {
 	return &Hub{
 		Clients:    make(map[*Client]bool),
-		Broadcast:  make(chan []byte),
+		Broadcast:  make(chan request.URLRequest),
 		Receive:    make(chan []byte),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
 	}
 }
 
-func (h *Hub) run(receiveHandler func([]byte)) {
+// Run runs rub
+func (h *Hub) Run(receiveHandler func([]byte)) {
 	for {
 		select {
 		case client := <-h.Register:
+			log.Debug("Registering client.")
 			h.Clients[client] = true
 		case client := <-h.Unregister:
+			log.Debug("Unregistering client.")
 			if _, ok := h.Clients[client]; ok {
 				delete(h.Clients, client)
-				close(client.send)
+				close(client.Send)
 			}
 		case message := <-h.Broadcast:
+			log.Debug("Broadcasting message.")
 			for client := range h.Clients {
 				select {
-				case client.send <- message:
+				case client.Send <- message:
 				default:
-					close(client.send)
+					close(client.Send)
 					delete(h.Clients, client)
 				}
 			}

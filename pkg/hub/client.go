@@ -5,36 +5,14 @@
 package hub
 
 import (
-	"log"
 	"net/http"
-	"time"
 
+	"github.com/Hassall/transit/pkg/request"
 	"github.com/gorilla/websocket"
+	log "github.com/sirupsen/logrus"
 )
 
-const (
-	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
-
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
-
-	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
-	maxMessageSize = 512
-)
-
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
-)
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-}
+var upgrader = websocket.Upgrader{}
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
@@ -44,7 +22,7 @@ type Client struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	Send chan request.URLRequest
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -57,9 +35,6 @@ func (c *Client) readPump() {
 		c.hub.Unregister <- c
 		c.conn.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
@@ -77,49 +52,39 @@ func (c *Client) writePump() {
 	defer func() {
 		c.conn.Close()
 	}()
-	// TODO: complete write for websocket
-	// for {
-	// 	select {
-	// 	case message, ok := <-c.send:
-	// 		c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-	// 		if !ok {
-	// 			// The hub closed the channel.
-	// 			c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-	// 			return
-	// 		}
+	for {
+		select {
+		case url, ok := <-c.Send:
+			if !ok {
+				// The hub closed the channel.
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
 
-	// 		w, err := c.conn.NextWriter(websocket.TextMessage)
-	// 		if err != nil {
-	// 			return
-	// 		}
-	// 		w.Write(message)
-
-	// 		// Add queued chat messages to the current websocket message.
-	// 		n := len(c.send)
-	// 		for i := 0; i < n; i++ {
-	// 			w.Write(newline)
-	// 			w.Write(<-c.send)
-	// 		}
-
-	// 		if err := w.Close(); err != nil {
-	// 			return
-	// 		}
-	// 	}
-	// }
+			if err := c.conn.WriteJSON(&url); err != nil {
+				log.Error("Failed to write to client", err)
+				break
+			}
+		}
+	}
 }
 
-// serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+// ServeWs handles websocket requests from the peer.
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) *Client {
+	log.Debug("Connecting with websocket client...")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
-		return
+		return nil
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
-	client.hub.Register <- client
+	log.Debug("Connected with websocket client.")
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
+	log.Debug("Registering client to hub...")
+	client := &Client{hub: hub, conn: conn, Send: make(chan request.URLRequest)}
+	hub.Register <- client
+
 	go client.writePump()
 	go client.readPump()
+
+	return client
 }
