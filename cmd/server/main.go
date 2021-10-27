@@ -50,7 +50,7 @@ func urlHandler(w http.ResponseWriter, r *http.Request) {
 		// update in memory urls
 		urlRequests = append(urlRequests, url)
 		// notify clients of new url
-		hub.NewHub().Broadcast <- url
+		connHub.Broadcast <- url
 	default:
 		http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
 	}

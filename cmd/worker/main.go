@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/Hassall/transit/pkg/request"
@@ -9,6 +11,9 @@ import (
 )
 
 var upgrader = websocket.Upgrader{}
+var timedRequests = make(map[string][]request.RequestStatistic)
+var requests = make(map[string]bool)
+var mu sync.Mutex
 
 func main() {
 	c, _, err := websocket.DefaultDialer.Dial("ws://localhost:8080/internal/worker", nil)
@@ -20,28 +25,37 @@ func main() {
 	defer c.Close()
 
 	go func() {
+		ticker := time.NewTicker(5000 * time.Millisecond)
 		for {
-			msg := request.URLRequest{}
-
-			err := c.ReadJSON(&msg)
-			if err != nil {
-				log.Println("read: ", err)
+			select {
+			case <-ticker.C:
+				mu.Lock()
+				for url := range requests {
+					timedHTTPRequest := request.TimedHTTPRequest(url)
+					timedRequests[url] = append(timedRequests[url], timedHTTPRequest)
+					fmt.Println(timedHTTPRequest)
+				}
+				mu.Unlock()
 			}
-			log.Printf("recv: %s", msg)
 		}
 	}()
 
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
 	for {
-		select {
-		case t := <-ticker.C:
-			err := c.WriteMessage(websocket.TextMessage, []byte(t.String()))
-			if err != nil {
-				log.Println("write:", err)
-				return
-			}
+		msg := request.URLRequest{}
+
+		err := c.ReadJSON(&msg)
+		if err != nil {
+			log.Println("read: ", err)
+		}
+		log.Printf("recv: %s", msg)
+		mu.Lock()
+		requests[msg.URL] = true
+		mu.Unlock()
+
+		err = c.WriteMessage(websocket.TextMessage, []byte("Received Msg."))
+		if err != nil {
+			log.Println("write:", err)
+			return
 		}
 	}
 }
